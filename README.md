@@ -2,7 +2,7 @@
 
 ## Overview
 
-FastAPI Metadata Stream Title Extractor is a simple application that allows users to obtain the title from the metadata of an audio stream and extract the artist and song name from it. It uses the FastAPI library to create a web API that accepts the URL of an MP3 audio stream as input and returns the artist and song name in JSON format.
+FastAPI Stream Title Metadata Extractor is a simple application that allows users to obtain the title from the metadata of an audio stream and extract the artist and song name from it. It uses the FastAPI library to create a web API that accepts the URL of an MP3 audio stream as input and returns the artist and song name in JSON format.
 
 ## Features
 
@@ -37,7 +37,9 @@ uvicorn main:app --reload
 ## Usage
 
 To retrieve the title from the metadata of an audio stream, send a GET request to the '/get_stream_title/' endpoint with the 'url' parameter containing the URL of the MP3 audio stream.
-
+```bash
+http://localhost:8000/get_stream_title/?url=https://stream-172.zeno.fm/2p5tpsaurfhvv?zs=e2VhdwoXS7GcwoSTuOKJmw
+```
 ## Contribution
 
 Contributions are welcome! Feel free to open an issue or submit a pull request for suggestions, bug fixes, or new features.
