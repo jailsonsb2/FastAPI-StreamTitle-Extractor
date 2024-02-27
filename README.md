@@ -26,14 +26,28 @@ Step 2: Navigate to the project directory
 ```bash
 cd FastAPI_Stream_Title_metadata_Extractor
 ```
-Step 3: Install dependencies
+Step 3: Create a virtual environment (optional but recommended)
+```bash
+python -m venv env
+```
+Step 4: Activate the virtual environment
+- On Windows:
+```bash
+.\env\Scripts\activate
+```
+- On macOS and Linux:
+```bash
+source env/bin/activate
+```
+Step 5: Install dependencies
 ```bash
 pip install -r requirements.txt
 ```
-Step 4: Run the application
+Step 6: Run the application
 ```bash
 uvicorn main:app --reload
 ```
+
 ## Usage
 
 To retrieve the title from the metadata of an audio stream, send a GET request to the '/get_stream_title/' endpoint with the 'url' parameter containing the URL of the MP3 audio stream.
