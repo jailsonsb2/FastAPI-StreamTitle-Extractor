@@ -2,8 +2,17 @@ from fastapi import FastAPI
 from typing import Optional
 from typing import Tuple
 import urllib.request
+from fastapi.middleware.cors import CORSMiddleware 
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def get_mp3_stream_title(streaming_url: str, interval: int) -> Optional[str]:
     needle = b'StreamTitle='
