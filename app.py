@@ -1,8 +1,8 @@
-from fastapi import FastAPI
-from typing import Optional
-from typing import Tuple
+from fastapi import FastAPI, BackgroundTasks
+from typing import Optional, Tuple, Dict, List
 import urllib.request
-from fastapi.middleware.cors import CORSMiddleware 
+from fastapi.middleware.cors import CORSMiddleware
+import datetime
 
 app = FastAPI()
 
@@ -45,6 +45,34 @@ def get_mp3_stream_title(streaming_url: str, interval: int) -> Optional[str]:
             return title
         offset += meta_data_interval + interval
 
+
+# Dicionário para armazenar o histórico por URL
+history_dict: Dict[str, List[Dict[str, str]]] = {}
+
+# Tarefa em segundo plano para monitorar a URL
+def monitor_stream(url: str):
+    while True:
+        title = get_mp3_stream_title(url, interval=19200)  # Use um intervalo adequado
+        if title:
+            artist, song = extract_artist_and_song(title)
+            if url in history_dict:
+                history_dict[url].append({"artist": artist, "song": song})
+            else:
+                history_dict[url] = [{"artist": artist, "song": song}]
+
+            # Limpar histórico após 24 horas
+            now = datetime.datetime.now()
+            history_dict[url] = [
+                entry
+                for entry in history_dict[url]
+                if (now - datetime.datetime.fromisoformat(entry["timestamp"])).total_seconds()
+                < 24 * 60 * 60
+            ]
+
+        # Ajuste o tempo de espera para evitar sobrecarga no servidor
+        time.sleep(60)  # Verificar a cada 60 segundos
+
+
 @app.get("/")
 async def root():
     return {"message": "Bem vindo, estamos funcionando!"}
@@ -68,5 +96,25 @@ def extract_artist_and_song(title: str) -> Tuple[str, str]:
         return artist.strip(), song.strip()
     else:
         return '', title.strip()
+    
+@app.get("/monitor_stream/")
+async def monitor_stream_endpoint(url: str, background_tasks: BackgroundTasks):
+    # Iniciar a tarefa em segundo plano
+    background_tasks.add_task(monitor_stream, url)
+
+    # Retornar a resposta inicial
+    return {"message": "Monitoramento iniciado", "url": url}
+
+# Endpoint para obter o histórico
+@app.get("/get_history/")
+async def get_history(url: str):
+    if url in history_dict:
+        return {
+            "artist": history_dict[url][-1]["artist"],  # Artista atual
+            "song": history_dict[url][-1]["song"],    # Música atual
+            "history": history_dict[url][:-1],         # Histórico (excluindo a atual)
+        }
+    else:
+        return {"error": "Histórico não encontrado para esta URL"}
 
 
