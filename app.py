@@ -3,6 +3,7 @@ from typing import Optional
 from typing import Tuple
 import urllib.request
 from fastapi.middleware.cors import CORSMiddleware 
+import requests
 
 app = FastAPI()
 
@@ -13,6 +14,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+def get_album_art(artist: str, song: str) -> Optional[str]:
+    """Busca a capa do álbum na iTunes API."""
+    try:
+        response = requests.get(
+            f"https://itunes.apple.com/search?term={artist}+{song}&media=music&limit=1"
+        )
+        response.raise_for_status() 
+        data = response.json()
+        if data["resultCount"] > 0:
+            return data["results"][0]["artworkUrl100"].replace("100x100bb", "512x512bb")
+        else:
+            return None  # Retorna None se não encontrar a capa
+    except requests.exceptions.RequestException as e:
+        print(f"Erro ao buscar capa do álbum: {e}")
+        return None
 
 def get_mp3_stream_title(streaming_url: str, interval: int) -> Optional[str]:
     needle = b'StreamTitle='
@@ -49,15 +66,16 @@ def get_mp3_stream_title(streaming_url: str, interval: int) -> Optional[str]:
 async def root():
     return {"message": "Bem vindo, estamos funcionando!"}
 
-
 @app.get("/get_stream_title/")
-async def read_root(url: str, interval: Optional[int] = 19200):
+async def get_stream_title(url: str, interval: Optional[int] = 19200):
     title = get_mp3_stream_title(url, interval)
     if title:
         artist, song = extract_artist_and_song(title)
-        return {"artist": artist, "song": song}
+        art_url = get_album_art(artist, song)  # Busca a capa do álbum
+        return {"artist": artist, "song": song, "art": art_url}  # Retorna a URL da capa junto com as informações da música
     else:
         return {"error": "Failed to retrieve stream title"}
+
 
 def extract_artist_and_song(title: str) -> Tuple[str, str]:
     # Remove as aspas simples extras
