@@ -1,8 +1,10 @@
-from fastapi import FastAPI, BackgroundTasks
+from fastapi import FastAPI
 from typing import Optional, Tuple, Dict, List
 import urllib.request
 from fastapi.middleware.cors import CORSMiddleware
+import asyncio
 import datetime
+import time
 
 app = FastAPI()
 
@@ -49,16 +51,22 @@ def get_mp3_stream_title(streaming_url: str, interval: int) -> Optional[str]:
 # Dicionário para armazenar o histórico por URL
 history_dict: Dict[str, List[Dict[str, str]]] = {}
 
-# Tarefa em segundo plano para monitorar a URL
-def monitor_stream(url: str):
+# Função assíncrona para monitorar o stream
+async def monitor_stream(url: str):
     while True:
-        title = get_mp3_stream_title(url, interval=19200)  # Use um intervalo adequado
+        title = get_mp3_stream_title(url, interval=19200)
         if title:
             artist, song = extract_artist_and_song(title)
+            timestamp = datetime.datetime.now().isoformat()
+
             if url in history_dict:
-                history_dict[url].append({"artist": artist, "song": song})
+                history_dict[url].append(
+                    {"artist": artist, "song": song, "timestamp": timestamp}
+                )
             else:
-                history_dict[url] = [{"artist": artist, "song": song}]
+                history_dict[url] = [
+                    {"artist": artist, "song": song, "timestamp": timestamp}
+                ]
 
             # Limpar histórico após 24 horas
             now = datetime.datetime.now()
@@ -69,8 +77,8 @@ def monitor_stream(url: str):
                 < 24 * 60 * 60
             ]
 
-        # Ajuste o tempo de espera para evitar sobrecarga no servidor
-        time.sleep(60)  # Verificar a cada 60 segundos
+        await asyncio.sleep(30)  # Aguarda 30 segundos antes da próxima verificação
+
 
 
 @app.get("/")
@@ -98,11 +106,8 @@ def extract_artist_and_song(title: str) -> Tuple[str, str]:
         return '', title.strip()
     
 @app.get("/monitor_stream/")
-async def monitor_stream_endpoint(url: str, background_tasks: BackgroundTasks):
-    # Iniciar a tarefa em segundo plano
-    background_tasks.add_task(monitor_stream, url)
-
-    # Retornar a resposta inicial
+async def start_monitoring(url: str):
+    asyncio.create_task(monitor_stream(url))
     return {"message": "Monitoramento iniciado", "url": url}
 
 # Endpoint para obter o histórico
@@ -110,9 +115,9 @@ async def monitor_stream_endpoint(url: str, background_tasks: BackgroundTasks):
 async def get_history(url: str):
     if url in history_dict:
         return {
-            "artist": history_dict[url][-1]["artist"],  # Artista atual
-            "song": history_dict[url][-1]["song"],    # Música atual
-            "history": history_dict[url][:-1],         # Histórico (excluindo a atual)
+            "artist": history_dict[url][-1]["artist"],
+            "song": history_dict[url][-1]["song"],
+            "history": history_dict[url][:-1],
         }
     else:
         return {"error": "Histórico não encontrado para esta URL"}
