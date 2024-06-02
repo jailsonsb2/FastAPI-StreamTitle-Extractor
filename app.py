@@ -83,7 +83,7 @@ async def monitor_stream(url: str):
 
                 # ... (lógica de limpeza do histórico)
 
-        await asyncio.sleep(60)  # Aguarda 60 segundos
+        await asyncio.sleep(30)  # Aguarda 60 segundos
 
 
 @app.get("/")
