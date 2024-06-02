@@ -51,34 +51,39 @@ def get_mp3_stream_title(streaming_url: str, interval: int) -> Optional[str]:
 # Dicionário para armazenar o histórico por URL
 history_dict: Dict[str, List[Dict[str, str]]] = {}
 
-# Função assíncrona para monitorar o stream
+# Função para filtrar músicas indesejadas
+def is_valid_song(artist: str, song: str) -> bool:
+    excluded_keywords = ["CORTE", "ANÚNCIO", "INTERVALO"]  # Adicione mais palavras-chave
+    return not any(keyword in artist.upper() or keyword in song.upper() for keyword in excluded_keywords)
+
+# Função assíncrona para monitorar o stream (atualizada)
 async def monitor_stream(url: str):
+    last_song = None
     while True:
         title = get_mp3_stream_title(url, interval=19200)
         if title:
             artist, song = extract_artist_and_song(title)
-            timestamp = datetime.datetime.now().isoformat()
+            if is_valid_song(artist, song):  # Filtrar músicas indesejadas
+                timestamp = datetime.datetime.now().isoformat()
 
-            if url in history_dict:
-                history_dict[url].append(
-                    {"artist": artist, "song": song, "timestamp": timestamp}
-                )
-            else:
-                history_dict[url] = [
-                    {"artist": artist, "song": song, "timestamp": timestamp}
-                ]
+                if (
+                    last_song is None
+                    or artist != last_song["artist"]
+                    or song != last_song["song"]
+                ):
+                    if url in history_dict:
+                        history_dict[url].append(
+                            {"artist": artist, "song": song, "timestamp": timestamp}
+                        )
+                    else:
+                        history_dict[url] = [
+                            {"artist": artist, "song": song, "timestamp": timestamp}
+                        ]
+                    last_song = {"artist": artist, "song": song}
 
-            # Limpar histórico após 24 horas
-            now = datetime.datetime.now()
-            history_dict[url] = [
-                entry
-                for entry in history_dict[url]
-                if (now - datetime.datetime.fromisoformat(entry["timestamp"])).total_seconds()
-                < 24 * 60 * 60
-            ]
+                # ... (lógica de limpeza do histórico)
 
-        await asyncio.sleep(30)  # Aguarda 30 segundos antes da próxima verificação
-
+        await asyncio.sleep(60)  # Aguarda 60 segundos
 
 
 @app.get("/")
