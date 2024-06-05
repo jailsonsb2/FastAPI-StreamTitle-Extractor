@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import requests
 import urllib.request
-import asyncio
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from typing import Optional, Tuple, Dict, List
 
 app = FastAPI()
@@ -80,22 +80,25 @@ def extract_artist_and_song(title: str) -> Tuple[str, str]:
 
 
 async def monitor_radio():
-    while True:
-        title = get_mp3_stream_title(RADIO_URL, 19200)
-        if title:
-            artist, song = extract_artist_and_song(title)
-            if artist != current_song["artist"] or song != current_song["song"]:
-                # Nova música detectada
-                if current_song["artist"] and current_song["song"]:
-                    song_history.insert(0, current_song)
-                    song_history = song_history[:SONG_HISTORY_LIMIT]
-                current_song = {"artist": artist, "song": song}
-        await asyncio.sleep(10)  # Aguarda 10 segundos
+    title = get_mp3_stream_title(RADIO_URL, 19200)
+    if title:
+        artist, song = extract_artist_and_song(title)
+        if artist != current_song["artist"] or song != current_song["song"]:
+            # Nova música detectada
+            if current_song["artist"] and current_song["song"]:
+                song_history.insert(0, current_song)
+                song_history = song_history[:SONG_HISTORY_LIMIT]
+            current_song = {"artist": artist, "song": song}
 
+scheduler = AsyncIOScheduler()
+
+@scheduler.scheduled_job('interval', seconds=10)
+async def scheduled_radio_monitor():
+    await monitor_radio()
 
 @app.on_event("startup")
-async def start_radio_monitor():
-    asyncio.create_task(monitor_radio())
+async def start_scheduler():
+    scheduler.start()
 
 @app.get("/")
 async def root():
