@@ -116,13 +116,13 @@ async def get_stream_title(url: str, interval: Optional[int] = 19200):
     
 @app.get("/radio_info/")
 async def get_radio_info():
-    art_url = get_album_art(current_song["artist"], current_song["song"])
     return {
         "currentSong": current_song["song"],
         "currentArtist": current_song["artist"],
         "songHistory": song_history,
-        "art": art_url,
-    }
+    }  # Removemos o campo "art"
+    
+
 
 
 
