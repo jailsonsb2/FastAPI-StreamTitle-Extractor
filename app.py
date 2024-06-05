@@ -2,7 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import requests
 import urllib.request
+import asyncio
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.executors.asyncio import AsyncIOExecutor
 from typing import Optional, Tuple, Dict, List
 
 app = FastAPI()
@@ -14,6 +16,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+executors = {
+    'default': AsyncIOExecutor()
+}
+
+scheduler = AsyncIOScheduler(executors=executors)
 
 RADIO_URL = "https://sv2.globalhostlive.com/proxy/bendistereo/stream2"  # URL da rádio fixa
 SONG_HISTORY_LIMIT = 5
@@ -80,25 +88,30 @@ def extract_artist_and_song(title: str) -> Tuple[str, str]:
 
 
 async def monitor_radio():
-    title = get_mp3_stream_title(RADIO_URL, 19200)
-    if title:
-        artist, song = extract_artist_and_song(title)
-        if artist != current_song["artist"] or song != current_song["song"]:
-            # Nova música detectada
-            if current_song["artist"] and current_song["song"]:
-                song_history.insert(0, current_song)
-                song_history = song_history[:SONG_HISTORY_LIMIT]
-            current_song = {"artist": artist, "song": song}
+    try:
+        print("Monitorando rádio...")
+        title = get_mp3_stream_title(RADIO_URL, 19200)
+        if title:
+            print(f"Título encontrado: {title}")
+            # ... (restante da função)
+        else:
+            print("Título não encontrado")
+    except Exception as e:
+        print(f"Erro ao monitorar rádio: {e}")
 
 scheduler = AsyncIOScheduler()
 
 @scheduler.scheduled_job('interval', seconds=10)
 async def scheduled_radio_monitor():
-    await monitor_radio()
+    try:
+        await monitor_radio()
+    except Exception as e:
+        print(f"Erro no agendamento: {e}")
 
 @app.on_event("startup")
 async def start_scheduler():
-    scheduler.start()
+    loop = asyncio.get_event_loop()
+    loop.create_task(scheduler.start())
 
 @app.get("/")
 async def root():
