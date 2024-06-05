@@ -16,7 +16,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-RADIO_URL = "http://example-radio.com:8000/radio.mp3"  # URL da rádio fixa
+RADIO_URL = "https://sv2.globalhostlive.com/proxy/bendistereo/stream2"  # URL da rádio fixa
 SONG_HISTORY_LIMIT = 5
 song_history = []  # Histórico de músicas
 current_song = {"artist": "", "song": ""}
