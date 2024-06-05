@@ -2,10 +2,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import requests
 import urllib.request
-import asyncio
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.executors.asyncio import AsyncIOExecutor
 from typing import Optional, Tuple, Dict, List
+import asyncio
 
 app = FastAPI()
 
@@ -17,11 +16,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-executors = {
-    'default': AsyncIOExecutor()
-}
-
-scheduler = AsyncIOScheduler(executors=executors)
 
 RADIO_URL = "https://sv2.globalhostlive.com/proxy/bendistereo/stream2"  # URL da rádio fixa
 SONG_HISTORY_LIMIT = 5
@@ -108,10 +102,10 @@ async def scheduled_radio_monitor():
     except Exception as e:
         print(f"Erro no agendamento: {e}")
 
+
 @app.on_event("startup")
 async def start_scheduler():
-    loop = asyncio.get_event_loop()
-    loop.create_task(scheduler.start())
+    await scheduler.start()
 
 @app.get("/")
 async def root():
