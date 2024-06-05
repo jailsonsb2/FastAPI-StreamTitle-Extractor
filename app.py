@@ -1,10 +1,10 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 import requests
 import urllib.request
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from typing import Optional, Tuple, Dict, List
 import asyncio
+
 
 app = FastAPI()
 
@@ -16,11 +16,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-RADIO_URL = "https://sv2.globalhostlive.com/proxy/bendistereo/stream2"  # URL da rádio fixa
+RADIO_URL = "http://example-radio.com:8000/radio.mp3"  # URL da rádio fixa
 SONG_HISTORY_LIMIT = 5
 song_history = []  # Histórico de músicas
 current_song = {"artist": "", "song": ""}
+
+radio_monitoring_started = False  # Flag para indicar se o monitoramento já foi iniciado
 
 def get_album_art(artist: str, song: str) -> Optional[str]:
     """Busca a capa do álbum na iTunes API."""
@@ -69,7 +70,6 @@ def get_mp3_stream_title(streaming_url: str, interval: int) -> Optional[str]:
             return title
         offset += meta_data_interval + interval
 
-
 def extract_artist_and_song(title: str) -> Tuple[str, str]:
     # Remove as aspas simples extras
     title = title.strip("'")
@@ -80,32 +80,21 @@ def extract_artist_and_song(title: str) -> Tuple[str, str]:
     else:
         return '', title.strip()
 
-
-async def monitor_radio():
-    try:
-        print("Monitorando rádio...")
-        title = get_mp3_stream_title(RADIO_URL, 19200)
-        if title:
-            print(f"Título encontrado: {title}")
-            # ... (restante da função)
-        else:
-            print("Título não encontrado")
-    except Exception as e:
-        print(f"Erro ao monitorar rádio: {e}")
-
-scheduler = AsyncIOScheduler()
-
-@scheduler.scheduled_job('interval', seconds=10)
-async def scheduled_radio_monitor():
-    try:
-        await monitor_radio()
-    except Exception as e:
-        print(f"Erro no agendamento: {e}")
-
-
-@app.on_event("startup")
-async def start_scheduler():
-    await scheduler.start()
+async def monitor_radio(background_tasks: BackgroundTasks):
+    global radio_monitoring_started, current_song, song_history
+    if not radio_monitoring_started:
+        radio_monitoring_started = True
+        while True:
+            title = get_mp3_stream_title(RADIO_URL, 19200)
+            if title:
+                artist, song = extract_artist_and_song(title)
+                if artist != current_song["artist"] or song != current_song["song"]:
+                    # Nova música detectada
+                    if current_song["artist"] and current_song["song"]:
+                        song_history.insert(0, current_song)
+                        song_history = song_history[:SONG_HISTORY_LIMIT]
+                    current_song = {"artist": artist, "song": song}
+            await asyncio.sleep(10)
 
 @app.get("/")
 async def root():
@@ -122,14 +111,14 @@ async def get_stream_title(url: str, interval: Optional[int] = 19200):
         return {"error": "Failed to retrieve stream title"}
     
 @app.get("/radio_info/")
-async def get_radio_info():
+async def get_radio_info(background_tasks: BackgroundTasks):
+    background_tasks.add_task(monitor_radio, background_tasks)  # Inicia o monitoramento em segundo plano
+
     return {
         "currentSong": current_song["song"],
         "currentArtist": current_song["artist"],
         "songHistory": song_history,
-    }  # Removemos o campo "art"
-    
-
+    }
 
 
 
