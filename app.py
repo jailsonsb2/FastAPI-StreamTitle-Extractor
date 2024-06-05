@@ -1,9 +1,9 @@
 from fastapi import FastAPI
-from typing import Optional
-from typing import Tuple
-import urllib.request
-from fastapi.middleware.cors import CORSMiddleware 
+from fastapi.middleware.cors import CORSMiddleware
 import requests
+import urllib.request
+import asyncio
+from typing import Optional, Tuple, Dict, List
 
 app = FastAPI()
 
@@ -14,6 +14,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+RADIO_URL = "https://sv2.globalhostlive.com/proxy/bendistereo/stream2"  # URL da rádio fixa
+SONG_HISTORY_LIMIT = 5
+song_history = []  # Histórico de músicas
+current_song = {"artist": "", "song": ""}
 
 def get_album_art(artist: str, song: str) -> Optional[str]:
     """Busca a capa do álbum na iTunes API."""
@@ -62,6 +67,36 @@ def get_mp3_stream_title(streaming_url: str, interval: int) -> Optional[str]:
             return title
         offset += meta_data_interval + interval
 
+
+def extract_artist_and_song(title: str) -> Tuple[str, str]:
+    # Remove as aspas simples extras
+    title = title.strip("'")
+    
+    if '-' in title:
+        artist, song = title.split('-', 1)
+        return artist.strip(), song.strip()
+    else:
+        return '', title.strip()
+
+
+async def monitor_radio():
+    while True:
+        title = get_mp3_stream_title(RADIO_URL, 19200)
+        if title:
+            artist, song = extract_artist_and_song(title)
+            if artist != current_song["artist"] or song != current_song["song"]:
+                # Nova música detectada
+                if current_song["artist"] and current_song["song"]:
+                    song_history.insert(0, current_song)
+                    song_history = song_history[:SONG_HISTORY_LIMIT]
+                current_song = {"artist": artist, "song": song}
+        await asyncio.sleep(10)  # Aguarda 10 segundos
+
+
+@app.on_event("startup")
+async def start_radio_monitor():
+    asyncio.create_task(monitor_radio())
+
 @app.get("/")
 async def root():
     return {"message": "Bem vindo, estamos funcionando!"}
@@ -75,16 +110,18 @@ async def get_stream_title(url: str, interval: Optional[int] = 19200):
         return {"artist": artist, "song": song, "art": art_url}  # Retorna a URL da capa junto com as informações da música
     else:
         return {"error": "Failed to retrieve stream title"}
-
-
-def extract_artist_and_song(title: str) -> Tuple[str, str]:
-    # Remove as aspas simples extras
-    title = title.strip("'")
     
-    if '-' in title:
-        artist, song = title.split('-', 1)
-        return artist.strip(), song.strip()
-    else:
-        return '', title.strip()
+@app.get("/radio_info/")
+async def get_radio_info():
+    art_url = get_album_art(current_song["artist"], current_song["song"])
+    return {
+        "currentSong": current_song["song"],
+        "currentArtist": current_song["artist"],
+        "songHistory": song_history,
+        "art": art_url,
+    }
+
+
+
 
 
