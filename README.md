@@ -18,42 +18,12 @@ Before running the application, make sure you have the following installed:
 
 ## Setup Instructions
 
-Step 1: Clone the repository
-```bash
-git clone https://github.com/jailsonsb2/FastAPI_Stream_Title_metadata_Extractor.git
-```
-Step 2: Navigate to the project directory
-```bash
-cd FastAPI_Stream_Title_metadata_Extractor
-```
-Step 3: Create a virtual environment (optional but recommended)
-```bash
-python -m venv env
-```
-Step 4: Activate the virtual environment
-- On Windows:
-```bash
-.\env\Scripts\activate
-```
-- On macOS and Linux:
-```bash
-source env/bin/activate
-```
-Step 5: Install dependencies
-```bash
-pip install -r requirements.txt
-```
-Step 6: Run the application
-```bash
-uvicorn main:app --reload
-```
+
 
 ## Usage
 
-To retrieve the title from the metadata of an audio stream, send a GET request to the '/get_stream_title/' endpoint with the 'url' parameter containing the URL of the MP3 audio stream.
-```bash
-http://localhost:8000/get_stream_title/?url=https://stream-172.zeno.fm/2p5tpsaurfhvv?zs=e2VhdwoXS7GcwoSTuOKJmw
-```
+
+
 ## Contribution
 
 Contributions are welcome! Feel free to open an issue or submit a pull request for suggestions, bug fixes, or new features.
