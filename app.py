@@ -1,4 +1,4 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 import requests
 import urllib.request
@@ -17,9 +17,11 @@ app.add_middleware(
 
 SONG_HISTORY_LIMIT = 5
 
-radio_data = {}
+radio_data = {}  # Dicionário para armazenar dados de cada rádio
 
 current_song = {"artist": "", "song": ""}
+
+radio_monitoring_started = False  # Flag para indicar se o monitoramento já foi iniciado
 
 def get_album_art(artist: str, song: str) -> Optional[str]:
     """Busca a capa do álbum na iTunes API."""
@@ -78,33 +80,28 @@ def extract_artist_and_song(title: str) -> Tuple[str, str]:
     else:
         return '', title.strip()
 
-async def monitor_radio(radio_url: str, websocket: WebSocket):
+async def monitor_radio(radio_url: str, background_tasks: BackgroundTasks):
     if radio_url not in radio_data:
         radio_data[radio_url] = {
             "song_history": [],
             "current_song": {"artist": "", "song": ""},
+            "radio_monitoring_started": False,
         }
 
     radio_info = radio_data[radio_url]
-    while True:
-        try:
+    if not radio_info["radio_monitoring_started"]:
+        radio_info["radio_monitoring_started"] = True
+        while True:
             title = get_mp3_stream_title(radio_url, 19200)
             if title:
                 artist, song = extract_artist_and_song(title)
                 if artist != radio_info["current_song"]["artist"] or song != radio_info["current_song"]["song"]:
+                    # Nova música detectada
                     if radio_info["current_song"]["artist"] and radio_info["current_song"]["song"]:
                         radio_info["song_history"].insert(0, radio_info["current_song"])
                         radio_info["song_history"] = radio_info["song_history"][:SONG_HISTORY_LIMIT]
                     radio_info["current_song"] = {"artist": artist, "song": song}
-                    await websocket.send_json({
-                        "currentSong": song,
-                        "currentArtist": artist,
-                        "songHistory": radio_info["song_history"],
-                    })
             await asyncio.sleep(10)
-        except WebSocketDisconnect:
-            break
-
 
 @app.get("/")
 async def root():
@@ -120,13 +117,16 @@ async def get_stream_title(url: str, interval: Optional[int] = 19200):
     else:
         return {"error": "Failed to retrieve stream title"}
     
-@app.websocket("/ws/radio_info/")
-async def websocket_endpoint(websocket: WebSocket, radio_url: str):
-    await websocket.accept()
-    try:
-        await monitor_radio(radio_url, websocket)
-    finally:
-        await websocket.close()
+@app.get("/radio_info/")
+async def get_radio_info(radio_url: str, background_tasks: BackgroundTasks):
+    background_tasks.add_task(monitor_radio, radio_url, background_tasks)
+
+    radio_info = radio_data.get(radio_url, {})
+    return {
+        "currentSong": radio_info.get("current_song", {}).get("song", ""),
+        "currentArtist": radio_info.get("current_song", {}).get("artist", ""),
+        "songHistory": radio_info.get("song_history", []),
+    }
     
 
 
