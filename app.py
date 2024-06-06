@@ -5,7 +5,6 @@ import urllib.request
 from typing import Optional, Tuple, Dict, List
 import asyncio
 
-
 app = FastAPI()
 
 app.add_middleware(
@@ -16,9 +15,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-RADIO_URL = "https://sv2.globalhostlive.com/proxy/bendistereo/stream2"  # URL da rádio fixa
-SONG_HISTORY_LIMIT = 10
-song_history = []  # Histórico de músicas
+SONG_HISTORY_LIMIT = 5
+
+radio_data = {}  # Dicionário para armazenar dados de cada rádio
+
 current_song = {"artist": "", "song": ""}
 
 radio_monitoring_started = False  # Flag para indicar se o monitoramento já foi iniciado
@@ -80,20 +80,27 @@ def extract_artist_and_song(title: str) -> Tuple[str, str]:
     else:
         return '', title.strip()
 
-async def monitor_radio(background_tasks: BackgroundTasks):
-    global radio_monitoring_started, current_song, song_history
-    if not radio_monitoring_started:
-        radio_monitoring_started = True
+async def monitor_radio(radio_url: str, background_tasks: BackgroundTasks):
+    if radio_url not in radio_data:
+        radio_data[radio_url] = {
+            "song_history": [],
+            "current_song": {"artist": "", "song": ""},
+            "radio_monitoring_started": False,
+        }
+
+    radio_info = radio_data[radio_url]
+    if not radio_info["radio_monitoring_started"]:
+        radio_info["radio_monitoring_started"] = True
         while True:
-            title = get_mp3_stream_title(RADIO_URL, 19200)
+            title = get_mp3_stream_title(radio_url, 19200)
             if title:
                 artist, song = extract_artist_and_song(title)
-                if artist != current_song["artist"] or song != current_song["song"]:
+                if artist != radio_info["current_song"]["artist"] or song != radio_info["current_song"]["song"]:
                     # Nova música detectada
-                    if current_song["artist"] and current_song["song"]:
-                        song_history.insert(0, current_song)
-                        song_history = song_history[:SONG_HISTORY_LIMIT]
-                    current_song = {"artist": artist, "song": song}
+                    if radio_info["current_song"]["artist"] and radio_info["current_song"]["song"]:
+                        radio_info["song_history"].insert(0, radio_info["current_song"])
+                        radio_info["song_history"] = radio_info["song_history"][:SONG_HISTORY_LIMIT]
+                    radio_info["current_song"] = {"artist": artist, "song": song}
             await asyncio.sleep(10)
 
 @app.get("/")
@@ -111,14 +118,16 @@ async def get_stream_title(url: str, interval: Optional[int] = 19200):
         return {"error": "Failed to retrieve stream title"}
     
 @app.get("/radio_info/")
-async def get_radio_info(background_tasks: BackgroundTasks):
-    background_tasks.add_task(monitor_radio, background_tasks)  # Inicia o monitoramento em segundo plano
+async def get_radio_info(radio_url: str, background_tasks: BackgroundTasks):
+    background_tasks.add_task(monitor_radio, radio_url, background_tasks)
 
+    radio_info = radio_data.get(radio_url, {})
     return {
-        "currentSong": current_song["song"],
-        "currentArtist": current_song["artist"],
-        "songHistory": song_history,
+        "currentSong": radio_info.get("current_song", {}).get("song", ""),
+        "currentArtist": radio_info.get("current_song", {}).get("artist", ""),
+        "songHistory": radio_info.get("song_history", []),
     }
+    
 
 
 
