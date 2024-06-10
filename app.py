@@ -92,7 +92,7 @@ async def monitor_radio(radio_url: str, background_tasks: BackgroundTasks):
     if not radio_info["radio_monitoring_started"]:
         radio_info["radio_monitoring_started"] = True
         while True:
-            title = get_mp3_stream_title(radio_url, 19200)
+            title = get_mp3_stream_title(radio_url, 16000)
             if title:
                 artist, song = extract_artist_and_song(title)
                 if artist != radio_info["current_song"]["artist"] or song != radio_info["current_song"]["song"]:
