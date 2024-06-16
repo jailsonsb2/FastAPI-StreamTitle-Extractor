@@ -25,15 +25,30 @@ Before running the application, make sure you have the following installed:
 - FastAPI
 - Uvicorn
 
-## ⚠️ Caveat
-
-This boilerplate is intentionally barebones. It's crafted to solve the deployment problem with simplicity and efficiency, without extra features or complexity. It's not meant to be an exhaustive setup but rather a starting point for deploying FastAPI applications on Digital Ocean.
-
-## 🚀 Quick Start
+## Quick Start
 
 1. Click the "Deploy to DO" button at the top.
 2. Follow the instructions on Digital Ocean to deploy your app.
 3. Enjoy your FastAPI app running in the cloud!
+
+---
+
+### Stream Title Fetcher
+
+To retrieve the stream title and cover image, simply replace the URL parameter in the API link provided below:
+
+**API Endpoint:** 
+`https://twj.es/get_stream_title/?url=`
+
+**Example Usage:**
+Replace `https://stream.zeno.fm/yn65fsaurfhvv` with your desired stream URL:
+```
+https://twj.es/get_stream_title/?url=https://stream.zeno.fm/yn65fsaurfhvv
+```
+
+This will return a link to the stream’s cover image along with the title.
+
+--- 
 
 ## Contribution
 
