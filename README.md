@@ -2,7 +2,7 @@
 
 🚀 with Deployment Boilerplate on Digital Ocean
 
-[![Deploy to DO](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/jailsonsb2/FastAPI_Stream_Title_metadata_Extractor/tree/main)
+[![Deploy to DO](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/jailsonsb2/FastAPI_Stream_Title_metadata/tree/main)
 
 ## Overview
 
