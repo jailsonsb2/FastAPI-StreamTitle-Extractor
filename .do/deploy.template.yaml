@@ -4,4 +4,4 @@ spec:
  - name: web
    git:
      branch: main
-     repo_clone_url: https://github.com/jailsonsb2/FastAPI_Stream_Title_metadata_Extractor/main
+     repo_clone_url: https://github.com/jailsonsb2/FastAPI_Stream_Title_metadata_Extractor
