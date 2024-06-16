@@ -1,5 +1,5 @@
 spec:
- name: FastAPI-StreamTitle-Extractor
+ name: digital-ocean-fast-api
  services:
  - name: web
    git:
