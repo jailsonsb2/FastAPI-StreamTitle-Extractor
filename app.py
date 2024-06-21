@@ -1,8 +1,8 @@
-from fastapi import FastAPI, BackgroundTasks
+from fastapi import FastAPI, BackgroundTasks, Query
 from fastapi.middleware.cors import CORSMiddleware
 import requests
 import urllib.request
-from typing import Optional, Tuple, Dict, List
+from typing import Optional, Tuple
 import asyncio
 
 
