@@ -1,11 +1,8 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException
 from typing import Optional, Tuple
 import urllib.request
 from fastapi.middleware.cors import CORSMiddleware
 import requests
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
-from fastapi.responses import HTMLResponse
 
 app = FastAPI()
 
@@ -67,50 +64,19 @@ def get_mp3_stream_title(streaming_url: str, interval: int) -> Optional[str]:
         print(f"Erro ao buscar título da música: {e}")
         return None
 
-
-@app.get("/", response_class=HTMLResponse)
+@app.get("/")
 async def root():
-    return """
-    <html>
-        <head>
-            <title>API de Streaming de Música</title>
-        </head>
-        <body>
-            <h1>Bem-vindo à API de Streaming de Música!</h1>
-            <p>Use o endpoint /get_stream_title/ para obter informações da música a partir de uma URL de stream.</p>
-        </body>
-    </html>
-    """
-    
+    return {"message": "Estamos funcionando! Use o endpoint /get_stream_title/?url=https://stream.zeno.fm/yn65fsaurfhvv para obter informações da música a partir de uma URL de stream."}
+
 @app.get("/get_stream_title/")
-@Limiter.limit("7/minute")  # Permite 5 requisições por minuto por IP
 async def get_stream_title(url: str, interval: Optional[int] = 19200):
     title = get_mp3_stream_title(url, interval)
     if title:
         artist, song = extract_artist_and_song(title)
-        art_url = get_album_art(artist, song)  
-        return {"artist": artist, "song": song, "art": art_url} 
+        art_url = get_album_art(artist, song)  # Busca a capa do álbum
+        return {"artist": artist, "song": song, "art": art_url}  # Retorna a URL da capa junto com as informações da música
     else:
-        raise HTTPException(status_code=404, detail="Falha ao recuperar o título do stream")
-
-    
-# Página de Erro 404 Personalizada
-@app.exception_handler(404)
-async def custom_404_handler(request: urllib.request.Request, exc: HTTPException):
-    return HTMLResponse(
-        content="""
-        <html>
-            <head>
-                <title>404 Não Encontrado</title>
-            </head>
-            <body>
-                <h1>Ops! Esta página não existe.</h1>
-                <p>O recurso que você está procurando não foi encontrado.</p>
-            </body>
-        </html>
-        """,
-        status_code=404
-    )
+        raise HTTPException(status_code=404, detail="Failed to retrieve stream title")
 
 def extract_artist_and_song(title: str) -> Tuple[str, str]:
     """Extrai o artista e a música do título."""
