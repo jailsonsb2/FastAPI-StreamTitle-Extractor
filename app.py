@@ -126,7 +126,7 @@ async def get_radio_info(background_tasks: BackgroundTasks, radio_url: Optional[
     if radio_url:
         return {
             "currentSong": "Free API Disabled",
-            "currentArtist": "visit api.streamafrica.net for more info"
+            "currentArtist": "contact contato@jailson.es to free use"
         }
     else:
         background_tasks.add_task(monitor_radio, background_tasks)  # Inicia o monitoramento em segundo plano
