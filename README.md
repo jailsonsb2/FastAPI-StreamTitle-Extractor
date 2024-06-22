@@ -4,6 +4,10 @@
 
 [![Deploy to DO](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/jailsonsb2/FastAPI-StreamTitle-Extractor/tree/main)
 
+Don't have an account? Get a $200 bonus to test it out!
+
+[![DigitalOcean Referral Badge](https://web-platforms.sfo2.cdn.digitaloceanspaces.com/WWW/Badge%203.svg)](https://www.digitalocean.com/?refcode=54a7273746ae&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge)
+
 ## Overview
 
 FastAPI Stream Title Metadata Extractor is a simple application that allows users to obtain the title from the metadata of an audio stream and extract the artist and song name from it. It uses the FastAPI library to create a web API that accepts the URL of an MP3 audio stream as input and returns the artist and song name in JSON format.
