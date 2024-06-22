@@ -5,7 +5,6 @@ import urllib.request
 from typing import Optional, Tuple
 import asyncio
 
-
 app = FastAPI()
 
 app.add_middleware(
@@ -111,17 +110,6 @@ async def get_stream_title(url: str, interval: Optional[int] = 19200):
         return {"error": "Failed to retrieve stream title"}
     
 @app.get("/radio_info/")
-async def get_radio_info(background_tasks: BackgroundTasks):
-    background_tasks.add_task(monitor_radio, background_tasks)  # Inicia o monitoramento em segundo plano
-
-    return {
-        "currentSong": current_song["song"],
-        "currentArtist": current_song["artist"],
-        "songHistory": song_history,
-    }
-
-
-@app.get("/radio_info/")
 async def get_radio_info(background_tasks: BackgroundTasks, radio_url: Optional[str] = Query(None)):
     if radio_url:
         return {
@@ -136,5 +124,3 @@ async def get_radio_info(background_tasks: BackgroundTasks, radio_url: Optional[
             "currentArtist": current_song["artist"],
             "songHistory": song_history,
         }
-
-
