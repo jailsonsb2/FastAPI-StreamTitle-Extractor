@@ -18,8 +18,11 @@ app.add_middleware(
 RADIO_STREAMS = {
     "jailson": "https://stream.zeno.fm/yn65fsaurfhvv",
     "inmortales": "https://ldeazevedo.com:8000/inmortales",
+    "fabian": "https://sonic-us.streaming-chile.com/8072/stream",
+
     # Adicione mais rádios aqui, no formato "nome_radio": "url_radio"
 }
+
 SONG_HISTORY_LIMIT = 5
 
 radio_data = {}
@@ -29,6 +32,8 @@ for radio_name in RADIO_STREAMS:
         "current_song": {"artist": "", "song": ""},
         "monitoring_started": False,
     }
+
+
 
 def get_album_art(artist: str, song: str) -> Optional[str]:
     try:
@@ -123,13 +128,25 @@ async def get_stream_title(url: str, interval: Optional[int] = 19200):
     else:
         return {"error": "Failed to retrieve stream title"}
 
-@app.get("/radio_info/{radio_name}")
-async def get_radio_info(radio_name: str, background_tasks: BackgroundTasks):
-    if radio_name not in RADIO_STREAMS:
-        return { 
+
+
+@app.get("/radio_info/")
+async def get_radio_info(background_tasks: BackgroundTasks, radio_url: Optional[str] = Query(None)):
+    if radio_url:
+        radio_name = next((name for name, url in RADIO_STREAMS.items() if url == radio_url), None)
+        if radio_name is None:
+            return {
+                "currentSong": "Free API Disabled",
+                "currentArtist": "Contact contato@jailson.es for free use."
+            }
+    else:
+        radio_name = None  # Para indicar que nenhum nome de rádio foi fornecido
+
+    if radio_name is None or radio_name not in RADIO_STREAMS:
+        return {
             "currentSong": "Free API Disabled",
             "currentArtist": "Contact contato@jailson.es for free use."
-        } 
+        }
 
     background_tasks.add_task(monitor_radio, radio_name, background_tasks)
     return {
