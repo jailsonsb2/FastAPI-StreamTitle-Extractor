@@ -15,7 +15,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-RADIO_URL = "https://sv2.globalhostlive.com/proxy/bendistereo/stream2"  # URL da rádio fixa
+RADIO_URL = "https://stream.zeno.fm/yn65fsaurfhvv"  # URL da rádio fixa
 SONG_HISTORY_LIMIT = 5
 song_history = []  # Histórico de músicas
 current_song = {"artist": "", "song": ""}
