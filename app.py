@@ -97,7 +97,11 @@ async def monitor_radio(background_tasks: BackgroundTasks):
 
 @app.get("/")
 async def root():
-    return {"message": "Bem vindo, estamos funcionando!"}
+    return {
+        "message": "Bem vindo, estamos funcionando!",
+        "contact": "contato@jailson.es",
+        "free_use": "Contact us for free use of history." 
+    }
 
 @app.get("/get_stream_title/")
 async def get_stream_title(url: str, interval: Optional[int] = 19200):
@@ -114,7 +118,7 @@ async def get_radio_info(background_tasks: BackgroundTasks, radio_url: Optional[
     if radio_url:
         return {
             "currentSong": "Free API Disabled",
-            "currentArtist": "contact contato@jailson.es to free use"
+            "currentArtist": "Contact contato@jailson.es for free use."
         }
     else:
         background_tasks.add_task(monitor_radio, background_tasks)  # Inicia o monitoramento em segundo plano
