@@ -19,7 +19,7 @@ RADIO_STREAMS = {
     "jailson": "https://stream.zeno.fm/yn65fsaurfhvv",
     "inmortales": "https://ldeazevedo.com:8000/inmortales",
     "fabian": "https://sonic-us.streaming-chile.com/8072/stream",
-
+    "bendicion": "https://sv2.globalhostlive.com/proxy/bendistereo/stream2",
     # Adicione mais rádios aqui, no formato "nome_radio": "url_radio"
 }
 
