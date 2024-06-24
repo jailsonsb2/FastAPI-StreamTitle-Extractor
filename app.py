@@ -20,7 +20,6 @@ RADIO_STREAMS = {
     "inmortales": "https://ldeazevedo.com:8000/inmortales",
     "fabian": "https://sonic-us.streaming-chile.com/8072/stream",
     "capital": "https://stm16.xcast.com.br:7208/stream",
-    https://stm16.xcast.com.br:7208/stream
     # Adicione mais rádios aqui, no formato "nome_radio": "url_radio"
 }
 
