@@ -1,8 +1,8 @@
-# FastAPI Metadata Stream Title Extractor
+# Radioplayer metadatas's Now Playng API
 
 🚀 with Deployment Boilerplate on Digital Ocean
 
-[![Deploy to DO](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/jailsonsb2/FastAPI-StreamTitle-Extractor/tree/main)
+[![Deploy to DO](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/jailsonsb2/Radioplayer-Now-Playing-API/tree/main)
 
 Don't have an account? Get a $200 bonus to test it out!
 
@@ -10,7 +10,7 @@ Don't have an account? Get a $200 bonus to test it out!
 
 ## Overview
 
-FastAPI Stream Title Metadata Extractor is a simple application that allows users to obtain the title from the metadata of an audio stream and extract the artist and song name from it. It uses the FastAPI library to create a web API that accepts the URL of an MP3 audio stream as input and returns the artist and song name in JSON format.
+This a simple application that allows users to obtain the title from the metadata of an audio stream and extract the artist and song name from it. It uses the FastAPI library to create a web API that accepts the URL of an MP3 audio stream as input and returns the artist and song name in JSON format.
 
 This repository serves as a minimal boilerplate for deploying a FastAPI application on Digital Ocean. It's designed to provide a straightforward way to get your FastAPI application running with the least amount of headache and bloatware.
 
