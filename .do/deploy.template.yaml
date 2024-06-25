@@ -4,4 +4,4 @@ spec:
  - name: web
    git:
      branch: main
-     repo_clone_url: https://github.com/jailsonsb2/FastAPI-StreamTitle-Extractor
+     repo_clone_url: https://github.com/jailsonsb2/Radioplayer-Now-Playing-API
