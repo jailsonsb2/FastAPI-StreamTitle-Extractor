@@ -4,6 +4,8 @@ import requests
 import urllib.request
 from typing import Optional, Tuple, Dict
 import asyncio
+import json
+import os
 
 app = FastAPI()
 
@@ -15,12 +17,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Dicionário para armazenar informações sobre as rádios
-radio_data: Dict[str, Dict] = {}
-
+DATA_DIR = "radio_data"  # Diretório para armazenar os arquivos JSON
 SONG_HISTORY_LIMIT = 5
 
+# Dicionário para armazenar informações sobre as rádios (carregadas dos arquivos)
+radio_data: Dict[str, Dict] = {}
 
+# Função para obter a capa do álbum
 def get_album_art(artist: str, song: str) -> Optional[str]:
     try:
         response = requests.get(
@@ -36,6 +39,7 @@ def get_album_art(artist: str, song: str) -> Optional[str]:
         print(f"Erro ao buscar capa do álbum: {e}")
         return None
 
+# Função para obter o título da transmissão de MP3
 def get_mp3_stream_title(streaming_url: str, interval: int) -> Optional[str]:
     needle = b'StreamTitle='
     ua = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/27.0.1453.110 Safari/537.36'
@@ -67,6 +71,7 @@ def get_mp3_stream_title(streaming_url: str, interval: int) -> Optional[str]:
             return title
         offset += meta_data_interval + interval
 
+# Função para extrair artista e música do título
 def extract_artist_and_song(title: str) -> Tuple[str, str]:
     # Remove as aspas simples extras
     title = title.strip("'")
@@ -78,17 +83,32 @@ def extract_artist_and_song(title: str) -> Tuple[str, str]:
         return '', title.strip()
     
 
-# Função para monitorar a rádio em segundo plano
-async def monitor_radio(radio_url: str, background_tasks: BackgroundTasks):
-    global radio_data
-    if radio_url not in radio_data:
-        radio_data[radio_url] = {
+# Função para carregar o histórico da rádio do arquivo JSON
+def load_radio_data(radio_url: str) -> Dict:
+    file_path = os.path.join(DATA_DIR, f"{radio_url.replace('/', '_')}.json")
+    if os.path.exists(file_path):
+        with open(file_path, "r") as f:
+            return json.load(f)
+    else:
+        return {
             "song_history": [],
             "current_song": {"artist": "", "song": ""},
             "monitoring_started": False,
         }
+
+# Função para salvar o histórico da rádio no arquivo JSON
+def save_radio_data(radio_url: str, data: Dict):
+    os.makedirs(DATA_DIR, exist_ok=True)
+    file_path = os.path.join(DATA_DIR, f"{radio_url.replace('/', '_')}.json")
+    with open(file_path, "w") as f:
+        json.dump(data, f, indent=4)
+
+# Função para monitorar a rádio em segundo plano
+async def monitor_radio(radio_url: str, background_tasks: BackgroundTasks):
+    global radio_data
+    radio_data[radio_url] = load_radio_data(radio_url)
     radio = radio_data[radio_url]
-    radio["monitoring_started"] = True  # Marca que o monitoramento começou
+    radio["monitoring_started"] = True
     while True:
         title = get_mp3_stream_title(radio_url, 19200)
         if title:
@@ -98,9 +118,12 @@ async def monitor_radio(radio_url: str, background_tasks: BackgroundTasks):
                     radio["song_history"].insert(0, radio["current_song"])
                     radio["song_history"] = radio["song_history"][:SONG_HISTORY_LIMIT]
                 radio["current_song"] = {"artist": artist, "song": song}
+                save_radio_data(radio_url, radio_data[radio_url])  # Salva após atualização
         await asyncio.sleep(10)
 
 
+
+# Endpoint raiz
 @app.get("/")
 async def root():
     return {
@@ -121,18 +144,11 @@ async def get_stream_title(url: str, interval: Optional[int] = 19200):
     else:
         return {"error": "Failed to retrieve stream title"}
 
-
-# Endpoint para obter informações da rádio (simplificado)
 @app.get("/radio_info/")
 async def get_radio_info(background_tasks: BackgroundTasks, radio_url: str):
-    if radio_url not in radio_data:
-        radio_data[radio_url] = {
-            "song_history": [],
-            "current_song": {"artist": "", "song": ""},
-            "monitoring_started": False,
-        }
+    radio_data[radio_url] = load_radio_data(radio_url)  # Carrega do arquivo
+    if not radio_data[radio_url]["monitoring_started"]:
         background_tasks.add_task(monitor_radio, radio_url, background_tasks)
-
     return {
         "currentSong": radio_data[radio_url]["current_song"]["song"],
         "currentArtist": radio_data[radio_url]["current_song"]["artist"],
