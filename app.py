@@ -105,7 +105,8 @@ async def monitor_radio(radio_url: str, background_tasks: BackgroundTasks):
 async def root():
     return {
         "message": "Welcome",
-        "now_playing": "Use /get_stream_title/?url=https://example.com/stream",
+        "now_playing and cover art": "Use /get_stream_title/?url=https://example.com/stream",
+        "now_playing and history": "Use /radio_info/?radio_url=https://example.com/stream",
         "contact": "contato@jailson.es"       
     }
 
