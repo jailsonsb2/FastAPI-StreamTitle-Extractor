@@ -2,7 +2,7 @@
 
 🚀 with Deployment Boilerplate on Digital Ocean
 
-[![Deploy to DO](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/jailsonsb2/Radioplayer-Now-Playing-API/tree/main)
+[![Deploy to DO](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/jailsonsb2/Radio-Now-Playing-API/tree/main)
 
 Don't have an account? Get a $200 bonus to test it out!
 
