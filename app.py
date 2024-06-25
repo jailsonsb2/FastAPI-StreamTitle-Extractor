@@ -9,30 +9,16 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-RADIO_STREAMS = {
-    "jailson": "https://stream.zeno.fm/yn65fsaurfhvv",
-    "inmortales": "https://ldeazevedo.com:8000/inmortales",
-    "fabian": "https://sonic-us.streaming-chile.com/8072/stream",
-    "capital": "https://stm16.xcast.com.br:7208/stream",
-    # Adicione mais rádios aqui, no formato "nome_radio": "url_radio"
-}
+# Dicionário para armazenar informações sobre as rádios
+radio_data: Dict[str, Dict] = {}
 
 SONG_HISTORY_LIMIT = 5
-
-radio_data = {}
-for radio_name in RADIO_STREAMS:
-    radio_data[radio_name] = {
-        "song_history": [],
-        "current_song": {"artist": "", "song": ""},
-        "monitoring_started": False,
-    }
-
 
 
 def get_album_art(artist: str, song: str) -> Optional[str]:
@@ -92,65 +78,62 @@ def extract_artist_and_song(title: str) -> Tuple[str, str]:
         return '', title.strip()
     
 
-
-async def monitor_radio(radio_name: str, background_tasks: BackgroundTasks):
+# Função para monitorar a rádio em segundo plano
+async def monitor_radio(radio_url: str, background_tasks: BackgroundTasks):
     global radio_data
-    radio = radio_data[radio_name]
-    if not radio["monitoring_started"]:
-        radio["monitoring_started"] = True
-        while True:
-            title = get_mp3_stream_title(RADIO_STREAMS[radio_name], 19200)
-            if title:
-                artist, song = extract_artist_and_song(title)
-                if artist != radio["current_song"]["artist"] or song != radio["current_song"]["song"]:
-                    if radio["current_song"]["artist"] and radio["current_song"]["song"]:
-                        radio["song_history"].insert(0, radio["current_song"])
-                        radio["song_history"] = radio["song_history"][:SONG_HISTORY_LIMIT]
-                    radio["current_song"] = {"artist": artist, "song": song}
-            await asyncio.sleep(10)
+    if radio_url not in radio_data:
+        radio_data[radio_url] = {
+            "song_history": [],
+            "current_song": {"artist": "", "song": ""},
+            "monitoring_started": False,
+        }
+    radio = radio_data[radio_url]
+    radio["monitoring_started"] = True  # Marca que o monitoramento começou
+    while True:
+        title = get_mp3_stream_title(radio_url, 19200)
+        if title:
+            artist, song = extract_artist_and_song(title)
+            if artist != radio["current_song"]["artist"] or song != radio["current_song"]["song"]:
+                if radio["current_song"]["artist"] and radio["current_song"]["song"]:
+                    radio["song_history"].insert(0, radio["current_song"])
+                    radio["song_history"] = radio["song_history"][:SONG_HISTORY_LIMIT]
+                radio["current_song"] = {"artist": artist, "song": song}
+        await asyncio.sleep(10)
+
 
 @app.get("/")
 async def root():
     return {
         "message": "Welcome",
         "now_playing": "Use /get_stream_title/?url=https://example.com/stream",
-        "contact": "contato@jailson.es",
-        "free_use": "Contact us for free use of history."        
+        "contact": "contato@jailson.es"       
     }
 
+# Endpoint para obter o título da transmissão e a capa do álbum
 @app.get("/get_stream_title/")
 async def get_stream_title(url: str, interval: Optional[int] = 19200):
     title = get_mp3_stream_title(url, interval)
     if title:
         artist, song = extract_artist_and_song(title)
-        art_url = get_album_art(artist, song)  # Busca a capa do álbum
-        return {"artist": artist, "song": song, "art": art_url}  # Retorna a URL da capa junto com as informações da música
+        art_url = get_album_art(artist, song) 
+        return {"artist": artist, "song": song, "art": art_url} 
     else:
         return {"error": "Failed to retrieve stream title"}
 
 
-
+# Endpoint para obter informações da rádio (simplificado)
 @app.get("/radio_info/")
-async def get_radio_info(background_tasks: BackgroundTasks, radio_url: Optional[str] = Query(None)):
-    if radio_url:
-        radio_name = next((name for name, url in RADIO_STREAMS.items() if url == radio_url), None)
-        if radio_name is None:
-            return {
-                "currentSong": "Free API Disabled",
-                "currentArtist": "Contact contato@jailson.es for free use."
-            }
-    else:
-        radio_name = None  # Para indicar que nenhum nome de rádio foi fornecido
-
-    if radio_name is None or radio_name not in RADIO_STREAMS:
-        return {
-            "currentSong": "Free API Disabled",
-            "currentArtist": "Contact contato@jailson.es for free use."
+async def get_radio_info(background_tasks: BackgroundTasks, radio_url: str):
+    if radio_url not in radio_data:
+        radio_data[radio_url] = {
+            "song_history": [],
+            "current_song": {"artist": "", "song": ""},
+            "monitoring_started": False,
         }
+        background_tasks.add_task(monitor_radio, radio_url, background_tasks)
 
-    background_tasks.add_task(monitor_radio, radio_name, background_tasks)
     return {
-        "currentSong": radio_data[radio_name]["current_song"]["song"],
-        "currentArtist": radio_data[radio_name]["current_song"]["artist"],
-        "songHistory": radio_data[radio_name]["song_history"],
+        "currentSong": radio_data[radio_url]["current_song"]["song"],
+        "currentArtist": radio_data[radio_url]["current_song"]["artist"],
+        "songHistory": radio_data[radio_url]["song_history"],
     }
