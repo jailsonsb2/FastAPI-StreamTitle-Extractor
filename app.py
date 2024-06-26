@@ -22,6 +22,7 @@ SONG_HISTORY_LIMIT = 5
 
 # Dicionário para armazenar informações sobre as rádios (carregadas dos arquivos)
 radio_data: Dict[str, Dict] = {}
+radio_data_lock = asyncio.Lock()  
 
 # Função para obter a capa do álbum
 def get_album_art(artist: str, song: str) -> Optional[str]:
@@ -106,7 +107,8 @@ def save_radio_data(radio_url: str, data: Dict):
 # Função para monitorar a rádio em segundo plano
 async def monitor_radio(radio_url: str, background_tasks: BackgroundTasks):
     global radio_data
-    radio_data[radio_url] = load_radio_data(radio_url)
+    async with radio_data_lock:  # Adquire o lock antes de acessar radio_data
+        radio_data[radio_url] = load_radio_data(radio_url)
     radio = radio_data[radio_url]
     radio["monitoring_started"] = True
     while True:
@@ -118,9 +120,9 @@ async def monitor_radio(radio_url: str, background_tasks: BackgroundTasks):
                     radio["song_history"].insert(0, radio["current_song"])
                     radio["song_history"] = radio["song_history"][:SONG_HISTORY_LIMIT]
                 radio["current_song"] = {"artist": artist, "song": song}
-                save_radio_data(radio_url, radio_data[radio_url])  # Salva após atualização
+                async with radio_data_lock:  # Adquire o lock antes de salvar
+                    save_radio_data(radio_url, radio_data[radio_url])
         await asyncio.sleep(10)
-
 
 
 # Endpoint raiz
@@ -144,13 +146,15 @@ async def get_stream_title(url: str, interval: Optional[int] = 19200):
     else:
         return {"error": "Failed to retrieve stream title"}
 
+# Endpoint para obter informações da rádio (modificado)
 @app.get("/radio_info/")
 async def get_radio_info(background_tasks: BackgroundTasks, radio_url: str):
-    radio_data[radio_url] = load_radio_data(radio_url)  # Carrega do arquivo
-    if not radio_data[radio_url]["monitoring_started"]:
-        background_tasks.add_task(monitor_radio, radio_url, background_tasks)
-    return {
-        "currentSong": radio_data[radio_url]["current_song"]["song"],
-        "currentArtist": radio_data[radio_url]["current_song"]["artist"],
-        "songHistory": radio_data[radio_url]["song_history"],
-    }
+    async with radio_data_lock:  # Adquire o lock antes de acessar radio_data
+        radio_data[radio_url] = load_radio_data(radio_url)
+        if not radio_data[radio_url]["monitoring_started"]:
+            background_tasks.add_task(monitor_radio, radio_url, background_tasks)
+        return {
+            "currentSong": radio_data[radio_url]["current_song"]["song"],
+            "currentArtist": radio_data[radio_url]["current_song"]["artist"],
+            "songHistory": radio_data[radio_url]["song_history"],
+        }
