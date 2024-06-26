@@ -11,18 +11,19 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-DATA_DIR = "radio_data"  # Diretório para armazenar os arquivos JSON
+DATA_DIR = "radio_data"
 SONG_HISTORY_LIMIT = 5
 
 # Dicionário para armazenar informações sobre as rádios (carregadas dos arquivos)
 radio_data: Dict[str, Dict] = {}
-radio_data_lock = asyncio.Lock()  
+radio_data_lock = asyncio.Lock() 
+
 
 # Função para obter a capa do álbum
 def get_album_art(artist: str, song: str) -> Optional[str]:
@@ -83,45 +84,30 @@ def extract_artist_and_song(title: str) -> Tuple[str, str]:
     else:
         return '', title.strip()
     
-
-# Função para carregar o histórico da rádio do arquivo JSON
-def load_radio_data(radio_url: str) -> Dict:
-    file_path = os.path.join(DATA_DIR, f"{radio_url.replace('/', '_')}.json")
-    if os.path.exists(file_path):
-        with open(file_path, "r") as f:
-            return json.load(f)
-    else:
-        return {
-            "song_history": [],
-            "current_song": {"artist": "", "song": ""},
-            "monitoring_started": False,
-        }
-
-# Função para salvar o histórico da rádio no arquivo JSON
-def save_radio_data(radio_url: str, data: Dict):
-    os.makedirs(DATA_DIR, exist_ok=True)
-    file_path = os.path.join(DATA_DIR, f"{radio_url.replace('/', '_')}.json")
-    with open(file_path, "w") as f:
-        json.dump(data, f, indent=4)
-
-# Função para monitorar a rádio em segundo plano
 async def monitor_radio(radio_url: str, background_tasks: BackgroundTasks):
     global radio_data
-    async with radio_data_lock:  # Adquire o lock antes de acessar radio_data
-        radio_data[radio_url] = load_radio_data(radio_url)
-    radio = radio_data[radio_url]
+
+    async with radio_data_lock:
+        if radio_url not in radio_data:
+            radio_data[radio_url] = {
+                "song_history": [],
+                "current_song": {"artist": "", "song": ""},
+                "monitoring_started": False,
+            }
+    
+    radio = radio_data[radio_url]  # Referência direta ao dicionário da rádio
     radio["monitoring_started"] = True
+
     while True:
         title = get_mp3_stream_title(radio_url, 19200)
         if title:
             artist, song = extract_artist_and_song(title)
-            if artist != radio["current_song"]["artist"] or song != radio["current_song"]["song"]:
-                if radio["current_song"]["artist"] and radio["current_song"]["song"]:
-                    radio["song_history"].insert(0, radio["current_song"])
-                    radio["song_history"] = radio["song_history"][:SONG_HISTORY_LIMIT]
-                radio["current_song"] = {"artist": artist, "song": song}
-                async with radio_data_lock:  # Adquire o lock antes de salvar
-                    save_radio_data(radio_url, radio_data[radio_url])
+            async with radio_data_lock:
+                if artist != radio["current_song"]["artist"] or song != radio["current_song"]["song"]:
+                    if radio["current_song"]["artist"] and radio["current_song"]["song"]:
+                        radio["song_history"].insert(0, radio["current_song"])
+                        radio["song_history"] = radio["song_history"][:SONG_HISTORY_LIMIT]
+                    radio["current_song"] = {"artist": artist, "song": song}
         await asyncio.sleep(10)
 
 
@@ -146,13 +132,18 @@ async def get_stream_title(url: str, interval: Optional[int] = 19200):
     else:
         return {"error": "Failed to retrieve stream title"}
 
-# Endpoint para obter informações da rádio (modificado)
+# Endpoint para obter informações da rádio (simplificado)
 @app.get("/radio_info/")
 async def get_radio_info(background_tasks: BackgroundTasks, radio_url: str):
-    async with radio_data_lock:  # Adquire o lock antes de acessar radio_data
-        radio_data[radio_url] = load_radio_data(radio_url)
-        if not radio_data[radio_url]["monitoring_started"]:
+    async with radio_data_lock:
+        if radio_url not in radio_data:
+            radio_data[radio_url] = {
+                "song_history": [],
+                "current_song": {"artist": "", "song": ""},
+                "monitoring_started": False,
+            }
             background_tasks.add_task(monitor_radio, radio_url, background_tasks)
+
         return {
             "currentSong": radio_data[radio_url]["current_song"]["song"],
             "currentArtist": radio_data[radio_url]["current_song"]["artist"],
