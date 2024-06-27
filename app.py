@@ -140,14 +140,21 @@ async def get_stream_title(url: str, interval: Optional[int] = 19200):
     if title:
         artist, song = extract_artist_and_song(title)
         art_url = get_album_art(artist, song)
+
+        # Nova estrutura da resposta com "now_playing"
         return {
-            "title": f"{artist} - {song}",
-            "artist": artist,
-            "track": song,
-            "cover": art_url
+            "now_playing": {
+                "song": {
+                    "title": f"{artist} - {song}",
+                    "artist": artist,
+                    "track": song,
+                    "cover": art_url
+                }
+            }
         }
     else:
         return {"error": "Failed to retrieve stream title"}
+
 
 
 # Endpoint para obter informações da rádio (simplificado)
