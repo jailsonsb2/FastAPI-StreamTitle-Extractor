@@ -132,6 +132,24 @@ async def get_stream_title(url: str, interval: Optional[int] = 19200):
     else:
         return {"error": "Failed to retrieve stream title"}
 
+# Endpoint para obter o título da transmissão e a capa do álbum
+@app.get("/metadata/")
+async def get_stream_title(url: str, interval: Optional[int] = 19200):
+    title = get_mp3_stream_title(url, interval)
+
+    if title:
+        artist, song = extract_artist_and_song(title)
+        art_url = get_album_art(artist, song)
+        return {
+            "title": f"{artist} - {song}",
+            "artist": artist,
+            "track": song,
+            "cover": art_url
+        }
+    else:
+        return {"error": "Failed to retrieve stream title"}
+
+
 # Endpoint para obter informações da rádio (simplificado)
 @app.get("/radio_info/")
 async def get_radio_info(background_tasks: BackgroundTasks, radio_url: str):
