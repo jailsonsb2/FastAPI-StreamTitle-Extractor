@@ -117,9 +117,9 @@ async def monitor_radio(radio_url: str, background_tasks: BackgroundTasks):
 async def root():
     conteudo_html = """
     <!DOCTYPE html>
-    <html>
+    <html lang="pt_BR">
     <head>
-        <title>Endpoint Raiz</title>
+        <title>Radio API Now playing</title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css">
     </head>
     <body>
@@ -130,8 +130,8 @@ async def root():
                 <hr class="my-4">
                 <p><strong>Endpoints Disponíveis:</strong></p>
                 <ul>
-                    <li><code>/get_stream_title/?url=</code> (Obter informações da transmissão e capa)</li>
-                    <li><code>/radio_info/?radio_url=</code> (Obter informações da rádio e histórico)</li>
+                    <li><code>/get_stream_title/?url=https://example.com/stream</code> (Obter informações da transmissão e capa)</li>
+                    <li><code>/radio_info/?radio_url=https://example.com/stream</code> (Obter informações da rádio e histórico)</li>
                 </ul>
                 <p class="lead">
                     <a class="btn btn-primary btn-lg" href="mailto:contato@jailson.es" role="button">Contato</a>
