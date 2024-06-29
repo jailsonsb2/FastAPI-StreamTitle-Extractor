@@ -143,6 +143,37 @@ async def root():
     """
     return HTMLResponse(content=conteudo_html, status_code=200)
 
+# Endpoint raiz
+@app.get("/", response_class=HTMLResponse)
+async def root():
+    conteudo_html = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Endpoint Raiz</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css">
+    </head>
+    <body>
+        <div class="container mt-5">
+            <div class="jumbotron">
+                <h1 class="display-4">Endpoint Raiz</h1>
+                <p class="lead">Bem-vindo!</p>
+                <hr class="my-4">
+                <p><strong>Endpoints Disponíveis:</strong></p>
+                <ul>
+                    <li><code>/get_stream_title/?url=</code> (Obter informações da transmissão e capa)</li>
+                    <li><code>/radio_info/?radio_url=</code> (Obter informações da rádio e histórico)</li>
+                </ul>
+                <p class="lead">
+                    <a class="btn btn-primary btn-lg" href="mailto:contato@jailson.es" role="button">Contato</a>
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=conteudo_html, status_code=200)
+
 # Endpoint para obter o título da transmissão e a capa do álbum
 @app.get("/get_stream_title/")
 async def get_stream_title(url: str, interval: Optional[int] = 19200):
@@ -153,6 +184,31 @@ async def get_stream_title(url: str, interval: Optional[int] = 19200):
         return {"artist": artist, "song": song, "art": art_url} 
     else:
         return {"error": "Failed to retrieve stream title"}
+
+# Endpoint para obter o título da transmissão e a capa do álbum
+@app.get("/metadata/")
+async def get_stream_title(url: str, interval: Optional[int] = 19200):
+    title = get_mp3_stream_title(url, interval)
+
+    if title:
+        artist, song = extract_artist_and_song(title)
+        art_url = get_album_art(artist, song)
+
+        # Nova estrutura da resposta com "now_playing"
+        return {
+            "now_playing": {
+                "song": {
+                    "title": f"{artist} - {song}",
+                    "artist": artist,
+                    "track": song,
+                    "cover": art_url
+                }
+            }
+        }
+    else:
+        return {"error": "Failed to retrieve stream title"}
+
+
 
 # Endpoint para obter informações da rádio (simplificado)
 @app.get("/radio_info/")
