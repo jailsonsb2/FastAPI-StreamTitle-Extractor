@@ -125,8 +125,8 @@ async def root():
     <body>
         <div class="container mt-5">
             <div class="jumbotron">
-                <h1 class="display-4">Instruções de uso</h1>
-                <p class="lead">Bem-vindo!</p>
+                <h2 class="display-4">Instruções de uso</h1>
+                <p class="lead">Bem-vindo! Estamos funcionando!</p>
                 <hr class="my-4">
                 <p><strong>Endpoints Disponíveis:</strong></p>
                 <ul>
