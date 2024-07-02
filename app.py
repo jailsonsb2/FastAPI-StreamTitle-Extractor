@@ -113,66 +113,36 @@ async def monitor_radio(radio_url: str, background_tasks: BackgroundTasks):
 
 
 # Endpoint raiz
-@app.get("/", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse)  # Define route for the root URL ("/")
 async def root():
-    conteudo_html = """
+    html_content = """
     <!DOCTYPE html>
-    <html lang="pt_BR">
+    <html lang="en">  
     <head>
-        <title>Radio API Now playing</title>
+        <title>Radio API Now Playing</title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css">
     </head>
     <body>
         <div class="container mt-5">
             <div class="jumbotron">
-                <h2 class="display-4">Instruções de uso</h1>
-                <p class="lead">Bem-vindo! Estamos funcionando!</p>
+                <h2 class="display-4">Instructions</h2>
+                <p class="lead">Welcome! We're up and running!</p>
                 <hr class="my-4">
-                <p><strong>Endpoints Disponíveis:</strong></p>
+                <p><strong>Available Endpoints:</strong></p>
                 <ul>
-                    <li><code>/get_stream_title/?url=https://example.com/stream</code> (Obter informações da transmissão e capa)</li>
-                    <li><code>/radio_info/?radio_url=https://example.com/stream</code> (Obter informações da rádio e histórico)</li>
+                    <li><code>/get_stream_title/?url=https://example.com/stream</code> (Get stream information and cover art)</li>
+                    <li><code>/radio_info/?radio_url=https://example.com/stream</code> (Get radio information and history)</li>
                 </ul>
                 <p class="lead">
-                    <a class="btn btn-primary btn-lg" href="mailto:contato@jailson.es" role="button">Contato</a>
+                    <a class="btn btn-primary btn-lg" href="mailto:contato@jailson.es" role="button">Contact</a>
                 </p>
             </div>
         </div>
     </body>
     </html>
     """
-    return HTMLResponse(content=conteudo_html, status_code=200)
+    return HTMLResponse(content=html_content, status_code=200)  # Return the HTML content
 
-# Endpoint raiz
-@app.get("/", response_class=HTMLResponse)
-async def root():
-    conteudo_html = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Endpoint Raiz</title>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css">
-    </head>
-    <body>
-        <div class="container mt-5">
-            <div class="jumbotron">
-                <h1 class="display-4">Endpoint Raiz</h1>
-                <p class="lead">Bem-vindo!</p>
-                <hr class="my-4">
-                <p><strong>Endpoints Disponíveis:</strong></p>
-                <ul>
-                    <li><code>/get_stream_title/?url=</code> (Obter informações da transmissão e capa)</li>
-                    <li><code>/radio_info/?radio_url=</code> (Obter informações da rádio e histórico)</li>
-                </ul>
-                <p class="lead">
-                    <a class="btn btn-primary btn-lg" href="mailto:contato@jailson.es" role="button">Contato</a>
-                </p>
-            </div>
-        </div>
-    </body>
-    </html>
-    """
-    return HTMLResponse(content=conteudo_html, status_code=200)
 
 # Endpoint para obter o título da transmissão e a capa do álbum
 @app.get("/get_stream_title/")
